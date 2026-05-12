@@ -60,7 +60,7 @@ html,body{height:100%;background:var(--bg);font-family:var(--font);color:var(--t
 .ag-hname{font-size:12px;font-weight:500;color:var(--text)}
 .ag-hsub{font-size:10px;color:var(--text-3);margin-top:1px}
 .ag-time{padding:6px 10px;background:var(--bg);border-bottom:1px solid var(--border);border-right:1px solid var(--border);font-size:11px;font-family:var(--mono);color:var(--text-3);display:flex;align-items:flex-start;padding-top:8px;min-height:60px}
-.ag-cell{border-bottom:1px solid var(--border);border-right:1px solid var(--border);padding:4px 5px;min-height:60px;cursor:pointer;position:relative;transition:background .1s}
+.ag-cell{border-bottom:1px solid var(--border);border-right:1px solid var(--border);padding:4px 5px;min-height:72px;cursor:pointer;position:relative;transition:background .1s}
 .ag-cell:last-child{border-right:none}
 .ag-cell:hover{background:var(--bg)}
 .ag-cell.full{background:#FFF5F5;cursor:default}
@@ -458,7 +458,18 @@ function renderAgenda(){
   const nc=cols.length;
   let html='<div class="ag-grid" style="grid-template-columns:58px repeat('+nc+',minmax(0,1fr))">';
   html+='<div class="ag-hcell" style="background:var(--bg)"></div>';
-  cols.forEach(c=>{const p=PROFS[c.pi];html+='<div class="ag-hcell"><div class="ag-hname">'+(S.vista==='semana'?p.i:p.n.replace('Lic. ',''))+'</div>'+(S.vista==='semana'?'<div class="ag-hsub">'+DIAS[c.f.getDay()]+' '+c.f.getDate()+'</div>':'')+'</div>'});
+  cols.forEach(c=>{
+  const p=PROFS[c.pi];
+  const tot=hP(c.pi).reduce((s,h)=>s+gT(c.pi,c.f,h).length,0);
+  const cap=hP(c.pi).length*S.disp[c.pi].cupo;
+  const lib=cap-tot;
+  const cc=lib===0?'#E24B4A':lib<=2?'#F0A500':'#1D9E75';
+  html+='<div class="ag-hcell">';
+  html+='<div class="ag-hname">'+(S.vista==='semana'?p.i:p.n.replace('Lic. ',''))+'</div>';
+  if(S.vista==='semana')html+='<div class="ag-hsub">'+DIAS[c.f.getDay()]+' '+c.f.getDate()+'</div>';
+  html+='<div style="font-size:10px;margin-top:3px;color:'+cc+'">'+tot+' turnos · '+lib+' libres</div>';
+  html+='</div>';
+});
   allH.forEach(hora=>{
     html+='<div class="ag-time">'+hora+':00</div>';
     cols.forEach(c=>{
@@ -467,7 +478,15 @@ function renderAgenda(){
       let cls='ag-cell';if(closed)cls+=' closed';else if(full)cls+=' full';
       html+='<div class="'+cls+'"'+(!closed&&!full?' onclick="openModal('+c.pi+','+hora+')"':'')+'>'; 
       ts.forEach((t,ti)=>{html+='<div class="pill '+PROFS[c.pi].c+'"><span class="pill-name">'+t.nombre+'</span><span class="pill-del" onclick="event.stopPropagation();dT('+c.pi+',new Date(\''+dk(c.f)+'T12:00:00\'),'+hora+','+ti+')" title="Eliminar">×</span></div>'});
-      if(!closed){html+='<div class="cdots">';for(let i=0;i<d.cupo;i++){const dc=i<ts.length?(full?'x':'u'):'f';html+='<div class="cdot '+dc+'"></div>'}html+='</div>'}
+      if(!closed){
+        const lib=d.cupo-ts.length;
+        const cc=full?'#E24B4A':lib===1?'#F0A500':'#1D9E75';
+        html+='<div style="position:absolute;bottom:4px;right:5px;display:flex;align-items:center;gap:5px">';
+        html+='<span style="font-size:10px;font-weight:500;color:'+cc+'">'+ts.length+'/'+d.cupo+'</span>';
+        html+='<div style="display:flex;gap:2px">';
+        for(let i=0;i<d.cupo;i++){const dc=i<ts.length?(full?'x':'u'):'f';html+='<div class="cdot '+dc+'"></div>'}
+        html+='</div></div>';
+      }
       html+='</div>';
     });
   });
