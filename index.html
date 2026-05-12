@@ -396,6 +396,7 @@ async function loginProf(pi){
   dot.textContent=p.i;dot.className='udot '+['ud0','ud1','ud2'][pi];
   document.getElementById('uname').textContent=p.n.replace('Lic. ','').split(' ')[0];
   await cargarConfig();
+  S.turnos = {}; // limpiar antes de cargar
   await cargarTurnos(S.fecha);
   showSec('agenda');render();
 }
@@ -420,6 +421,7 @@ async function chDate(d){
   const f=new Date(S.fecha);
   f.setDate(f.getDate()+(S.vista==='semana'?d*7:d));
   S.fecha=f;
+  S.turnos = {}; // limpiar antes de cargar nueva fecha
   await cargarTurnos(S.fecha);
   render();
 }
@@ -648,7 +650,8 @@ async function cargarTurnos(fecha) {
   const data = await sbGet('turnos', 'fecha=eq.'+dk(fecha)+'&select=*');
   if(!Array.isArray(data)) return;
   data.forEach(t => {
-    const k = t.profesional_id+'_'+t.fecha+'_'+t.hora;
+    const pi = t.profesional_id - 1; // DB usa 1,2,3 — app usa 0,1,2
+    const k = pi+'_'+t.fecha+'_'+t.hora;
     if(!S.turnos[k]) S.turnos[k] = [];
     if(!S.turnos[k].find(x => x.db_id === t.id)) {
       S.turnos[k].push({
